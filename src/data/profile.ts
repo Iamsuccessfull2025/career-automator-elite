@@ -6,50 +6,56 @@ export const vishnuProfile: UserProfile = {
   name: "Vishnu Madhusudhan",
   email: "vishnu.madhusudhan@example.com",
   skills: [
-    "Project Coordination", 
+    "Project Scheduling", 
     "Stakeholder Engagement", 
-    "ESG", 
-    "Compliance", 
-    "Student Success", 
-    "Banking Operations", 
-    "Engineering", 
-    "Process Design", 
+    "Team Leadership", 
+    "ESG Operations", 
+    "Process Improvement", 
     "Client Support", 
-    "Data Analysis", 
-    "Risk Tracking", 
+    "Power BI (Beginner)", 
     "Jira", 
-    "Power BI", 
-    "Excel", 
+    "Advanced Excel", 
+    "MS Projects", 
     "Qualtrics", 
-    "Microsoft Projects"
+    "Microsoft Office", 
+    "Carbon Accounting"
   ],
   experience: [
     {
       title: "Project Coordinator",
-      company: "Global Sustainability Initiative",
-      location: "Remote, India",
-      startDate: "2023-01",
-      endDate: null,
-      description: "Coordinated ESG compliance projects, tracked risks, and engaged with stakeholders using Jira and Power BI for reporting.",
-      skills: ["Project Coordination", "ESG", "Risk Tracking", "Jira", "Power BI"]
+      company: "Greenwich Students' Union",
+      location: "London, UK",
+      startDate: "2022-06",
+      endDate: "2023-05",
+      description: "Led student retention projects with a budget of £450k. Coordinated with multiple stakeholders to improve student experience and retention rates.",
+      skills: ["Project Scheduling", "Stakeholder Engagement", "Team Leadership"]
     },
     {
-      title: "Operations Analyst",
-      company: "National Banking Corporation",
-      location: "Mumbai, India",
-      startDate: "2021-06",
-      endDate: "2022-12",
-      description: "Supported banking operations and client success initiatives. Analyzed operational data to improve processes and customer satisfaction.",
-      skills: ["Banking Operations", "Client Support", "Data Analysis", "Excel"]
+      title: "Student Ambassador",
+      company: "University of Greenwich",
+      location: "London, UK",
+      startDate: "2022-01",
+      endDate: "2022-06",
+      description: "Provided mentoring and conducted outreach activities to prospective students. Represented the university at various events.",
+      skills: ["Client Support", "Stakeholder Engagement"]
     },
     {
-      title: "Process Design Engineer",
-      company: "Engineering Solutions Ltd",
-      location: "Kerala, India",
-      startDate: "2019-03",
-      endDate: "2021-05",
-      description: "Designed chemical engineering processes and supported client projects. Implemented process improvements and documentation.",
-      skills: ["Engineering", "Process Design", "Client Support"]
+      title: "Trainee",
+      company: "Financial Crime & Banking Ops - Deloitte UK Academy",
+      location: "London, UK",
+      startDate: "2021-08",
+      endDate: "2021-12",
+      description: "Trained in financial crime prevention and banking operations. Gained understanding of compliance and regulatory requirements.",
+      skills: ["Process Improvement", "Advanced Excel"]
+    },
+    {
+      title: "Process Engineer",
+      company: "Bio Petro Clean",
+      location: "India",
+      startDate: "2020-05",
+      endDate: "2021-06",
+      description: "Focused on ESG-oriented process coordination. Implemented efficiency improvements and environmental compliance measures.",
+      skills: ["ESG Operations", "Process Improvement", "Carbon Accounting"]
     }
   ],
   education: [
@@ -57,22 +63,30 @@ export const vishnuProfile: UserProfile = {
       degree: "MSc Engineering Management",
       institution: "University of Greenwich",
       location: "London, UK",
-      graduationDate: "2018-12",
-      description: "Focus on project management and engineering business principles."
+      graduationDate: "2022-06",
+      description: "Specialized in project management methodologies and engineering business principles."
     },
     {
       degree: "BEng Chemical Engineering",
       institution: "Mahatma Gandhi University",
       location: "Kerala, India",
-      graduationDate: "2016-05",
-      description: "Specialized in process engineering and design fundamentals."
+      graduationDate: "2019-05",
+      description: "Focused on process engineering and sustainable design concepts."
     }
   ],
   jobPreferences: {
-    roles: ["Project Manager", "ESG Consultant", "Operations Analyst", "Process Engineer", "Sustainability Specialist"],
-    locations: ["India", "Remote", "Dubai", "UK", "Singapore"],
+    roles: [
+      "Project Manager", 
+      "Project Coordinator", 
+      "ESG Consultant", 
+      "Sustainability Specialist", 
+      "Operations Analyst", 
+      "Client Success Manager", 
+      "Process Improvement Specialist"
+    ],
+    locations: ["UAE", "UK", "EU", "India", "Remote"],
     remotePreference: "remote",
-    minSalary: 75000
+    minSalary: 60000
   },
   resumeUrl: "https://example.com/vishnu-resume.pdf",
   linkedInProfile: "https://linkedin.com/in/vishnu-madhusudhan"

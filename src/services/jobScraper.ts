@@ -106,8 +106,11 @@ export class JobScraperService {
       
       const allJobs = [...linkedInJobs, ...naukriGulfJobs];
       
+      // Filter jobs based on criteria
+      const filteredJobs = this.filterJobs(allJobs);
+      
       // Calculate match score for each job
-      const matchedJobs = this.calculateJobMatches(allJobs, profile);
+      const matchedJobs = this.calculateJobMatches(filteredJobs, profile);
       
       // Sync the matched jobs to Google Sheets
       await GoogleSheetSyncService.syncJobMatches(matchedJobs);
@@ -141,6 +144,35 @@ export class JobScraperService {
     
     // Remove duplicates and filter out empty strings
     return [...new Set(keywords.filter(k => k.trim() !== ""))];
+  }
+
+  /**
+   * Filter jobs based on specific criteria
+   * @param jobs List of jobs to filter
+   * @private
+   */
+  private filterJobs(jobs: JobListing[]): JobListing[] {
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    
+    return jobs.filter(job => {
+      // Filter by recency (less than 7 days old)
+      const jobDate = new Date(job.postedDate);
+      const isRecent = jobDate >= sevenDaysAgo;
+      
+      // Filter out jobs requiring more than 5 years of experience
+      // This is a simple check - in a real implementation, you'd need more sophisticated parsing
+      const experienceRequired = job.description.toLowerCase().match(/(\d+)\s*(\+)?\s*years? experience/);
+      const hasTooMuchExperience = experienceRequired && parseInt(experienceRequired[1]) > 5;
+      
+      // Filter out pure developer/engineering roles
+      // This is also a simple check - in a real implementation, you'd need better classification
+      const isDeveloperRole = job.title.toLowerCase().includes('developer') || 
+                              job.title.toLowerCase().includes('engineer') ||
+                              job.title.toLowerCase().includes('coding');
+      
+      return isRecent && !hasTooMuchExperience && !isDeveloperRole;
+    });
   }
 
   /**
@@ -206,16 +238,16 @@ export class JobScraperService {
     return [
       {
         id: "ng-1",
-        title: "Process Design Engineer",
+        title: "Project Coordinator - Sustainability",
         company: "Engineering Solutions UAE",
         location: "Dubai, UAE",
-        description: "Seeking a Process Design Engineer with chemical engineering background...",
-        requirements: ["Chemical engineering", "Process design", "Engineering"],
+        description: "Seeking a Project Coordinator with sustainability background...",
+        requirements: ["Project coordination", "Sustainability", "Stakeholder engagement"],
         url: "https://naukrigulf.com/jobs/view/ng-1",
         source: "Naukrigulf",
         postedDate: new Date().toISOString(),
         matchScore: 0, // Will be calculated later
-        category: "Engineering",
+        category: "ESG/Climate",
         contacts: [],
         status: "new",
         scraped: true

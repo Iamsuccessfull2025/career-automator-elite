@@ -12,8 +12,16 @@ export class DocumentGeneratorService {
   static async generateCV(profile: UserProfile, job: JobListing): Promise<string> {
     console.log(`Generating custom CV for ${profile.name} for job: ${job.title} at ${job.company}`);
     
+    // Determine which job bucket/category this job belongs to
+    const jobCategory = job.category;
+    
     // In a real implementation, this would use the Google Docs API
-    // to create a document from a template and customize it for the job
+    // to create a document from a template, customize it with profile data and job keywords,
+    // and save it to a specific folder in Google Drive
+    
+    // The folder structure would be: /Jobs/{Category} – {Company} – {JobID}/
+    const folderPath = `/Jobs/${jobCategory} – ${job.company} – ${job.id}/`;
+    console.log(`Creating CV in folder: ${folderPath}`);
     
     // For now, we'll simulate the API call with a delay
     await new Promise(resolve => setTimeout(resolve, 2000));
@@ -34,7 +42,12 @@ export class DocumentGeneratorService {
     console.log(`Generating custom cover letter for ${profile.name} for job: ${job.title} at ${job.company}`);
     
     // In a real implementation, this would use the Google Docs API
-    // to create a document from a template and customize it for the job
+    // to create a document from a template, customize it with a humble, smart tone,
+    // and save it to the same folder as the CV
+    
+    const jobCategory = job.category;
+    const folderPath = `/Jobs/${jobCategory} – ${job.company} – ${job.id}/`;
+    console.log(`Creating cover letter in folder: ${folderPath}`);
     
     // For now, we'll simulate the API call with a delay
     await new Promise(resolve => setTimeout(resolve, 1500));
@@ -55,7 +68,7 @@ export class DocumentGeneratorService {
     console.log(`Finding up to ${maxContacts} LinkedIn contacts for job at ${job.company}`);
     
     // In a real implementation, this would use the LinkedIn API
-    // to search for people at the company in relevant positions
+    // to search for people at the company in the same role or senior positions
     
     // For now, we'll simulate the API call with a delay
     await new Promise(resolve => setTimeout(resolve, 1800));
@@ -67,7 +80,7 @@ export class DocumentGeneratorService {
     for (let i = 0; i < numContacts; i++) {
       contacts.push({
         name: `Contact Person ${i+1}`,
-        position: i === 0 ? "Hiring Manager" : "Team Member",
+        position: i === 0 ? "Hiring Manager" : `${job.title} at ${job.company}`,
         company: job.company,
         profileUrl: `https://linkedin.com/in/contact-${i+1}`
       });

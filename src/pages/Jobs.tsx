@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { JobCard } from "@/components/jobs/JobCard";
@@ -26,7 +25,7 @@ import { useToast } from "@/components/ui/use-toast";
 import { 
   Search, 
   Filter, 
-  RefreshCcw,
+  RefreshCw,
   ChevronDown,
   Clock,
   Briefcase
@@ -56,31 +55,25 @@ const Jobs = () => {
   }>({ isRunning: false, lastRunTime: null, nextRunTime: null });
 
   useEffect(() => {
-    // Start the job scraper on component mount
     const jobScraper = JobScraperService.getInstance();
     jobScraper.startScraper(vishnuProfile);
     
-    // Update scraper status
     const updateScraperStatus = () => {
       setScraperStatus(jobScraper.getStatus());
     };
     
-    // Update status initially and then every minute
     updateScraperStatus();
     const statusInterval = setInterval(updateScraperStatus, 60000);
     
-    // Clean up on component unmount
     return () => {
       clearInterval(statusInterval);
     };
   }, []);
 
-  // Get unique categories and sources from the job data
   const categories = Array.from(new Set(jobs.map(job => job.category)));
   const sources = Array.from(new Set(jobs.map(job => job.source)));
 
   const handleViewJobDetails = async (job: JobListing) => {
-    // If job doesn't have contacts yet, find them now
     if (job.contacts.length === 0) {
       try {
         const contacts = await DocumentGeneratorService.findJobContacts(job, 5);
@@ -98,7 +91,6 @@ const Jobs = () => {
     setIsRefreshing(true);
     
     try {
-      // Generate documents
       const resumeId = await DocumentGeneratorService.generateCV(vishnuProfile, job);
       let coverId;
       
@@ -106,15 +98,12 @@ const Jobs = () => {
         coverId = await DocumentGeneratorService.generateCoverLetter(vishnuProfile, job);
       }
       
-      // Update job status
       const updatedJob = { ...job, status: 'applied' as const };
       
-      // Update jobs list
       setJobs(prevJobs => 
         prevJobs.map(j => j.id === job.id ? updatedJob : j)
       );
       
-      // Sync to Google Sheets
       await GoogleSheetSyncService.syncJobApplication(
         updatedJob,
         new Date(),
@@ -144,11 +133,9 @@ const Jobs = () => {
     setIsRefreshing(true);
     
     try {
-      // Manual job scrape
       const jobScraper = JobScraperService.getInstance();
       const freshJobs = await jobScraper.manualScrape(vishnuProfile);
       
-      // Merge with existing jobs, removing duplicates
       const existingJobIds = new Set(jobs.map(job => job.id));
       const newJobs = freshJobs.filter(job => !existingJobIds.has(job.id));
       
@@ -237,9 +224,10 @@ const Jobs = () => {
           <Button 
             onClick={handleRefreshJobs}
             disabled={isRefreshing}
+            className="bg-green-600 hover:bg-green-700"
           >
-            <RefreshCcw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
-            {isRefreshing ? "Refreshing..." : "Refresh Jobs"}
+            <RefreshCw className={`h-4 w-4 mr-2 ${isRefreshing ? "animate-spin" : ""}`} />
+            {isRefreshing ? "Refreshing..." : "Refresh Now"}
           </Button>
         </div>
 

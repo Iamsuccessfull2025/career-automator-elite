@@ -1,5 +1,5 @@
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
 import { JobCard } from "@/components/jobs/JobCard";
 import { JobDetails } from "@/components/jobs/JobDetails";
@@ -33,6 +33,10 @@ import {
 } from "lucide-react";
 import { JobListing } from "@/types";
 import { getMockJobs } from "@/services/mockData";
+import { JobScraperService } from "@/services/jobScraper";
+import { GoogleSheetSyncService } from "@/services/googleSheetSync";
+import { DocumentGeneratorService } from "@/services/documentGenerator";
+import { vishnuProfile } from "@/data/profile";
 
 const Jobs = () => {
   const { toast } = useToast();
@@ -44,38 +48,128 @@ const Jobs = () => {
   const [selectedSources, setSelectedSources] = useState<string[]>([]);
   const [showFilters, setShowFilters] = useState(false);
   const [sortBy, setSortBy] = useState("relevance");
+  const [jobs, setJobs] = useState<JobListing[]>(getMockJobs());
+  const [scraperStatus, setScraperStatus] = useState<{
+    isRunning: boolean;
+    lastRunTime: Date | null;
+    nextRunTime: Date | null;
+  }>({ isRunning: false, lastRunTime: null, nextRunTime: null });
 
-  const jobs = getMockJobs();
+  useEffect(() => {
+    // Start the job scraper on component mount
+    const jobScraper = JobScraperService.getInstance();
+    jobScraper.startScraper(vishnuProfile);
+    
+    // Update scraper status
+    const updateScraperStatus = () => {
+      setScraperStatus(jobScraper.getStatus());
+    };
+    
+    // Update status initially and then every minute
+    updateScraperStatus();
+    const statusInterval = setInterval(updateScraperStatus, 60000);
+    
+    // Clean up on component unmount
+    return () => {
+      clearInterval(statusInterval);
+    };
+  }, []);
 
   // Get unique categories and sources from the job data
   const categories = Array.from(new Set(jobs.map(job => job.category)));
   const sources = Array.from(new Set(jobs.map(job => job.source)));
 
-  const handleViewJobDetails = (job: JobListing) => {
+  const handleViewJobDetails = async (job: JobListing) => {
+    // If job doesn't have contacts yet, find them now
+    if (job.contacts.length === 0) {
+      try {
+        const contacts = await DocumentGeneratorService.findJobContacts(job, 5);
+        job = { ...job, contacts };
+      } catch (error) {
+        console.error("Failed to find job contacts:", error);
+      }
+    }
+    
     setSelectedJob(job);
     setJobDetailsOpen(true);
   };
 
-  const handleApplyToJob = (job: JobListing, generateCover: boolean) => {
-    toast({
-      title: "Application Scheduled",
-      description: `Your application for ${job.title} at ${job.company} has been scheduled for processing.`,
-      duration: 5000,
-    });
-    setJobDetailsOpen(false);
+  const handleApplyToJob = async (job: JobListing, generateCover: boolean) => {
+    setIsRefreshing(true);
+    
+    try {
+      // Generate documents
+      const resumeId = await DocumentGeneratorService.generateCV(vishnuProfile, job);
+      let coverId;
+      
+      if (generateCover) {
+        coverId = await DocumentGeneratorService.generateCoverLetter(vishnuProfile, job);
+      }
+      
+      // Update job status
+      const updatedJob = { ...job, status: 'applied' as const };
+      
+      // Update jobs list
+      setJobs(prevJobs => 
+        prevJobs.map(j => j.id === job.id ? updatedJob : j)
+      );
+      
+      // Sync to Google Sheets
+      await GoogleSheetSyncService.syncJobApplication(
+        updatedJob,
+        new Date(),
+        { resumeId, coverId }
+      );
+      
+      toast({
+        title: "Application Submitted",
+        description: `Your application for ${job.title} at ${job.company} has been processed.`,
+        duration: 5000,
+      });
+    } catch (error) {
+      console.error("Error applying to job:", error);
+      toast({
+        title: "Application Failed",
+        description: "There was an error processing your application. Please try again.",
+        variant: "destructive",
+        duration: 5000,
+      });
+    } finally {
+      setIsRefreshing(false);
+      setJobDetailsOpen(false);
+    }
   };
 
-  const handleRefreshJobs = () => {
+  const handleRefreshJobs = async () => {
     setIsRefreshing(true);
-    // Simulate refresh process
-    setTimeout(() => {
+    
+    try {
+      // Manual job scrape
+      const jobScraper = JobScraperService.getInstance();
+      const freshJobs = await jobScraper.manualScrape(vishnuProfile);
+      
+      // Merge with existing jobs, removing duplicates
+      const existingJobIds = new Set(jobs.map(job => job.id));
+      const newJobs = freshJobs.filter(job => !existingJobIds.has(job.id));
+      
+      setJobs(prevJobs => [...newJobs, ...prevJobs]);
+      
       toast({
         title: "Jobs Refreshed",
-        description: "Job listings have been updated with the latest data.",
+        description: `Found ${newJobs.length} new job listings matching your profile.`,
         duration: 3000,
       });
+    } catch (error) {
+      console.error("Error refreshing jobs:", error);
+      toast({
+        title: "Refresh Failed",
+        description: "Failed to refresh job listings. Please try again later.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
       setIsRefreshing(false);
-    }, 2000);
+    }
   };
 
   const toggleCategory = (category: string) => {
@@ -119,6 +213,21 @@ const Jobs = () => {
     }
     return 0;
   });
+
+  const formatLastScraped = () => {
+    if (!scraperStatus.lastRunTime) return "Not yet run";
+    
+    const timeDiff = Date.now() - scraperStatus.lastRunTime.getTime();
+    const minutes = Math.floor(timeDiff / 60000);
+    
+    if (minutes < 1) return "Just now";
+    if (minutes === 1) return "1 minute ago";
+    if (minutes < 60) return `${minutes} minutes ago`;
+    
+    const hours = Math.floor(minutes / 60);
+    if (hours === 1) return "1 hour ago";
+    return `${hours} hours ago`;
+  };
 
   return (
     <Layout>
@@ -242,7 +351,7 @@ const Jobs = () => {
             </div>
             <div className="flex items-center text-sm text-muted-foreground">
               <Clock className="mr-1 h-4 w-4" />
-              <span>Updated 32 minutes ago</span>
+              <span>Updated {formatLastScraped()}</span>
             </div>
           </div>
 

@@ -11,6 +11,19 @@ interface JobsBySourceChartProps {
 }
 
 export function JobsBySourceChart({ data }: JobsBySourceChartProps) {
+  // Update the chart colors to match the sources
+  const getSourceColor = (sourceName: string): string => {
+    if (sourceName === "LinkedIn") return "#0077B5"; // LinkedIn blue
+    if (sourceName === "Naukrigulf") return "#FF7A59"; // Orange color for Naukrigulf
+    return data.find(item => item.name === sourceName)?.color || "#8884d8";
+  };
+
+  // Apply colors based on source names
+  const chartData = data.map(item => ({
+    ...item,
+    color: getSourceColor(item.name)
+  }));
+
   return (
     <Card>
       <CardHeader>
@@ -23,7 +36,7 @@ export function JobsBySourceChart({ data }: JobsBySourceChartProps) {
           <ResponsiveContainer width="100%" height="100%">
             <PieChart>
               <Pie
-                data={data}
+                data={chartData}
                 cx="50%"
                 cy="50%"
                 labelLine={false}
@@ -32,7 +45,7 @@ export function JobsBySourceChart({ data }: JobsBySourceChartProps) {
                 dataKey="value"
                 label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
               >
-                {data.map((entry, index) => (
+                {chartData.map((entry, index) => (
                   <Cell key={`cell-${index}`} fill={entry.color} />
                 ))}
               </Pie>

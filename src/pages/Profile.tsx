@@ -1,7 +1,6 @@
-
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Layout from "@/components/Layout";
-import { UserProfile } from "@/types";
+import { UserProfile, Experience, Education } from "@/types";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,80 +39,119 @@ import {
   Trash2
 } from "lucide-react";
 import { useToast } from "@/components/ui/use-toast";
+import { useForm } from "react-hook-form";
+import { z } from "zod";
+import { zodResolver } from "@hookform/resolvers/zod";
+import { GoogleSheetSyncService } from "@/services/googleSheetSync";
 
-// Mock user profile data
-const mockUserProfile: UserProfile = {
-  name: "Alex Johnson",
-  email: "alex.johnson@example.com",
+const vishnuProfile: UserProfile = {
+  name: "Vishnu Madhusudhan",
+  email: "vishnu.madhusudhan@example.com",
   skills: [
-    "React", 
-    "TypeScript", 
-    "JavaScript", 
-    "HTML", 
-    "CSS", 
-    "Node.js", 
-    "Express", 
-    "MongoDB", 
-    "GraphQL", 
-    "Redux",
-    "Next.js",
-    "TailwindCSS",
-    "UI/UX Design"
+    "Project Coordination", 
+    "Stakeholder Engagement", 
+    "ESG", 
+    "Compliance", 
+    "Student Success", 
+    "Banking Operations", 
+    "Engineering", 
+    "Process Design", 
+    "Client Support", 
+    "Data Analysis", 
+    "Risk Tracking", 
+    "Jira", 
+    "Power BI", 
+    "Excel", 
+    "Qualtrics", 
+    "Microsoft Projects"
   ],
   experience: [
     {
-      title: "Senior Frontend Developer",
-      company: "TechSolutions Inc",
-      location: "Dubai, UAE",
-      startDate: "2021-01",
+      title: "Project Coordinator",
+      company: "Global Sustainability Initiative",
+      location: "Remote, India",
+      startDate: "2023-01",
       endDate: null,
-      description: "Developing and maintaining web applications using React and TypeScript. Leading frontend architecture decisions and mentoring junior developers.",
-      skills: ["React", "TypeScript", "Redux", "TailwindCSS"]
+      description: "Coordinated ESG compliance projects, tracked risks, and engaged with stakeholders using Jira and Power BI for reporting.",
+      skills: ["Project Coordination", "ESG", "Risk Tracking", "Jira", "Power BI"]
     },
     {
-      title: "Frontend Developer",
-      company: "Web Innovators LLC",
-      location: "Abu Dhabi, UAE",
-      startDate: "2018-06",
-      endDate: "2020-12",
-      description: "Worked on multiple client projects building responsive web applications and implementing UI components based on design specifications.",
-      skills: ["React", "JavaScript", "HTML", "CSS", "SASS"]
-    },
-    {
-      title: "Web Developer",
-      company: "Digital Agency Co",
+      title: "Operations Analyst",
+      company: "National Banking Corporation",
       location: "Mumbai, India",
-      startDate: "2016-03",
-      endDate: "2018-05",
-      description: "Developed and maintained client websites and web applications. Collaborated with designers and backend developers to implement features.",
-      skills: ["JavaScript", "jQuery", "HTML", "CSS", "PHP"]
+      startDate: "2021-06",
+      endDate: "2022-12",
+      description: "Supported banking operations and client success initiatives. Analyzed operational data to improve processes and customer satisfaction.",
+      skills: ["Banking Operations", "Client Support", "Data Analysis", "Excel"]
+    },
+    {
+      title: "Process Design Engineer",
+      company: "Engineering Solutions Ltd",
+      location: "Kerala, India",
+      startDate: "2019-03",
+      endDate: "2021-05",
+      description: "Designed chemical engineering processes and supported client projects. Implemented process improvements and documentation.",
+      skills: ["Engineering", "Process Design", "Client Support"]
     }
   ],
   education: [
     {
-      degree: "Bachelor of Science in Computer Science",
-      institution: "University of Mumbai",
-      location: "Mumbai, India",
+      degree: "MSc Engineering Management",
+      institution: "University of Greenwich",
+      location: "London, UK",
+      graduationDate: "2018-12",
+      description: "Focus on project management and engineering business principles."
+    },
+    {
+      degree: "BEng Chemical Engineering",
+      institution: "Mahatma Gandhi University",
+      location: "Kerala, India",
       graduationDate: "2016-05",
-      description: "Focus on web technologies and software development principles."
+      description: "Specialized in process engineering and design fundamentals."
     }
   ],
   jobPreferences: {
-    roles: ["Frontend Developer", "Full Stack Developer", "React Developer"],
-    locations: ["Dubai", "Abu Dhabi", "Remote"],
+    roles: ["Project Manager", "ESG Consultant", "Operations Analyst", "Process Engineer", "Sustainability Specialist"],
+    locations: ["India", "Remote", "Dubai", "UK", "Singapore"],
     remotePreference: "remote",
-    minSalary: 120000
+    minSalary: 75000
   },
-  resumeUrl: "https://example.com/resume.pdf",
-  linkedInProfile: "https://linkedin.com/in/alex-johnson"
+  resumeUrl: "https://example.com/vishnu-resume.pdf",
+  linkedInProfile: "https://linkedin.com/in/vishnu-madhusudhan"
 };
+
+const profileFormSchema = z.object({
+  name: z.string().min(2, { message: "Name must be at least 2 characters." }),
+  email: z.string().email({ message: "Please enter a valid email address." }),
+  linkedInProfile: z.string().url({ message: "Please enter a valid LinkedIn URL." }).optional(),
+});
+
+type ProfileFormValues = z.infer<typeof profileFormSchema>;
 
 const Profile = () => {
   const { toast } = useToast();
-  const [profile, setProfile] = useState<UserProfile>(mockUserProfile);
+  const [profile, setProfile] = useState<UserProfile>(vishnuProfile);
   const [editMode, setEditMode] = useState(false);
   const [newSkill, setNewSkill] = useState("");
   const [expandedSection, setExpandedSection] = useState<string | null>(null);
+  const [isSyncingSheet, setIsSyncingSheet] = useState(false);
+
+  const form = useForm<ProfileFormValues>({
+    resolver: zodResolver(profileFormSchema),
+    defaultValues: {
+      name: profile.name,
+      email: profile.email,
+      linkedInProfile: profile.linkedInProfile,
+    },
+  });
+
+  useEffect(() => {
+    form.reset({
+      name: profile.name,
+      email: profile.email,
+      linkedInProfile: profile.linkedInProfile,
+    });
+  }, [profile, form]);
 
   const toggleSection = (section: string) => {
     if (expandedSection === section) {
@@ -140,13 +178,38 @@ const Profile = () => {
     });
   };
 
-  const handleSaveProfile = () => {
-    toast({
-      title: "Profile Updated",
-      description: "Your profile has been successfully updated.",
-      duration: 3000,
-    });
-    setEditMode(false);
+  const handleSaveProfile = async () => {
+    const formValues = form.getValues();
+    
+    const updatedProfile = {
+      ...profile,
+      name: formValues.name,
+      email: formValues.email,
+      linkedInProfile: formValues.linkedInProfile || "",
+    };
+    
+    setProfile(updatedProfile);
+    
+    try {
+      setIsSyncingSheet(true);
+      await GoogleSheetSyncService.syncProfile(updatedProfile);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been successfully updated and synced to Google Sheets.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Failed to sync profile with Google Sheets:", error);
+      toast({
+        title: "Profile Updated",
+        description: "Your profile has been updated, but failed to sync with Google Sheets.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsSyncingSheet(false);
+      setEditMode(false);
+    }
   };
 
   const handleDownloadResume = () => {
@@ -155,6 +218,28 @@ const Profile = () => {
       description: "Your resume has been downloaded to your device.",
       duration: 3000,
     });
+  };
+
+  const syncToGoogleSheets = async () => {
+    try {
+      setIsSyncingSheet(true);
+      await GoogleSheetSyncService.syncProfile(profile);
+      toast({
+        title: "Google Sheets Sync",
+        description: "Your profile has been successfully synced to Google Sheets.",
+        duration: 3000,
+      });
+    } catch (error) {
+      console.error("Failed to sync with Google Sheets:", error);
+      toast({
+        title: "Sync Failed",
+        description: "Failed to sync your profile with Google Sheets. Please try again later.",
+        variant: "destructive",
+        duration: 3000,
+      });
+    } finally {
+      setIsSyncingSheet(false);
+    }
   };
 
   const formatDate = (dateString: string | null): string => {
@@ -180,18 +265,28 @@ const Profile = () => {
                 </Button>
                 <Button 
                   onClick={handleSaveProfile}
+                  disabled={isSyncingSheet}
                 >
                   <Save className="h-4 w-4 mr-2" />
-                  Save Changes
+                  {isSyncingSheet ? "Saving..." : "Save Changes"}
                 </Button>
               </>
             ) : (
-              <Button 
-                onClick={() => setEditMode(true)}
-              >
-                <Pencil className="h-4 w-4 mr-2" />
-                Edit Profile
-              </Button>
+              <>
+                <Button 
+                  variant="outline"
+                  onClick={syncToGoogleSheets}
+                  disabled={isSyncingSheet}
+                >
+                  {isSyncingSheet ? "Syncing..." : "Sync to Google Sheets"}
+                </Button>
+                <Button 
+                  onClick={() => setEditMode(true)}
+                >
+                  <Pencil className="h-4 w-4 mr-2" />
+                  Edit Profile
+                </Button>
+              </>
             )}
           </div>
         </div>
@@ -213,32 +308,51 @@ const Profile = () => {
               </CardHeader>
               <CardContent>
                 {editMode ? (
-                  <div className="space-y-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-2">
-                        <FormLabel>Full Name</FormLabel>
-                        <Input 
-                          value={profile.name}
-                          onChange={(e) => setProfile({...profile, name: e.target.value})}
+                  <Form {...form}>
+                    <form className="space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="name"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Full Name</FormLabel>
+                              <FormControl>
+                                <Input {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="email"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Email</FormLabel>
+                              <FormControl>
+                                <Input type="email" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                       </div>
-                      <div className="space-y-2">
-                        <FormLabel>Email</FormLabel>
-                        <Input 
-                          type="email"
-                          value={profile.email}
-                          onChange={(e) => setProfile({...profile, email: e.target.value})}
-                        />
-                      </div>
-                    </div>
-                    <div className="space-y-2">
-                      <FormLabel>LinkedIn Profile</FormLabel>
-                      <Input 
-                        value={profile.linkedInProfile}
-                        onChange={(e) => setProfile({...profile, linkedInProfile: e.target.value})}
+                      <FormField
+                        control={form.control}
+                        name="linkedInProfile"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>LinkedIn Profile</FormLabel>
+                            <FormControl>
+                              <Input {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
                       />
-                    </div>
-                  </div>
+                    </form>
+                  </Form>
                 ) : (
                   <div className="space-y-4">
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -292,6 +406,11 @@ const Profile = () => {
                           variant="ghost" 
                           size="icon"
                           className="h-8 w-8"
+                          onClick={() => {
+                            const newExperience = [...profile.experience];
+                            newExperience.splice(index, 1);
+                            setProfile({...profile, experience: newExperience});
+                          }}
                         >
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
